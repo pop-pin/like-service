@@ -1,0 +1,42 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/poppin?createDatabaseIfNotExist=true
+    username: root
+    password: 1234
+    hikari:
+      auto-commit: false
+      connection-test-query: SELECT 1
+      minimum-idle: 10
+      maximum-pool-size: 20
+      pool-name: review-pool
+
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      timeout: 10
+
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        format_sql: true
+        hbm2ddl.auto: create
+    open-in-view: false
+    show-sql: true
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+

@@ -1,0 +1,56 @@
+server:
+  port: 8080
+  servlet:
+    contextPath: /api/review
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      auto-commit: false
+      connection-test-query: SELECT 1
+      minimum-idle: 10
+      maximum-pool-size: 20
+      pool-name: review-pool
+
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    properties:
+      hibernate:
+        format_sql: false
+        hbm2ddl.auto: none
+    open-in-view: false
+    show-sql: false
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+management:
+  endpoints:
+    prometheus:
+      enabled: true
+    web:
+      exposure:
+        include: prometheus
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
+            response:
+              status: true
+      sla:
+        http:
+          server:
+            requests: 100ms,150ms,250ms,500ms,1s
+            response:
+              status: 100ms,150ms,250ms,500ms,1s
+    enable:
+      jvm: true
+      tomcat: true
