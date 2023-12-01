@@ -12,7 +12,7 @@ spring:
       connection-test-query: SELECT 1
       minimum-idle: 10
       maximum-pool-size: 20
-      pool-name: review-pool
+      pool-name: like-pool
 
   data:
     redis:
