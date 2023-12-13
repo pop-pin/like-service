@@ -16,7 +16,7 @@ public class LikeController {
     private final LikeService likeService;
 
     //userId와 locationId를 통해 좋아요 추가
-    @PostMapping("/add")
+    @PostMapping("/")
     public ResponseEntity<Void> addLike(@RequestParam Long userId, @RequestParam Long locationId) {
         likeService.addLike(userId, locationId);
         return ResponseEntity.ok().build();
@@ -38,7 +38,7 @@ public class LikeController {
     }
 
     //특정 유저가 location 좋아요 삭제
-    @DeleteMapping("/remove")
+    @DeleteMapping("/")
     public ResponseEntity<Void> removeLike(@RequestParam Long userId, @RequestParam Long locationId) {
         likeService.removeLike(userId, locationId);
         return ResponseEntity.ok().build();

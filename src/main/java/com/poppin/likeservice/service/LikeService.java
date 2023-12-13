@@ -41,8 +41,13 @@ public class LikeService {
             Optional<LocationLike> locationLike = locationLikeRepository.findByLocationId(locationId);
             if (locationLike.isPresent()) {
                 likesCount = locationLike.get().getLikeCount();
-            } else {
+            } else {//likecount가 데베에도 없을때
                 likesCount = 0;
+                LocationLike saveLocationLike = LocationLike.builder()
+                        .locationId(locationId)
+                        .likeCount(0)
+                        .build();
+                locationLikeRepository.save(saveLocationLike);
             }
             hashOperations.put(key, hashkey, likesCount);
         }
@@ -80,7 +85,6 @@ public class LikeService {
         String key = "locationId::" + locationId;
         String hashkey = "likes";
 
-        // Handle the retrieval and casting of likesCount
         Integer likesCount;
         Object rawLikesCount = hashOperations.get(key, hashkey);
         if (rawLikesCount instanceof Integer) {
@@ -123,6 +127,21 @@ public class LikeService {
                         .locationId(locationId)
                         .build();
                 userLikeRepository.save(userLike);
+
+                locationLikeRepository.findByLocationId(locationId).ifPresentOrElse(
+                        locationLike -> {
+                            locationLike.setLikeCount(locationLike.getLikeCount() + 1);
+                            locationLikeRepository.save(locationLike);
+                        },
+                        () -> {//혹시라도 데베에 저장되어있지 않다면
+                            LocationLike newLocationLike = LocationLike.builder()
+                                    .locationId(locationId)
+                                    .likeCount(1)
+                                    .build();
+                            locationLikeRepository.save(newLocationLike);
+                        }
+                );
+
             } else if ("remove".equals(action)) {
                 userLikeRepository.findByUserIdAndLocationId(userId, locationId)
                         .ifPresent(userLikeRepository::delete);
