@@ -5,7 +5,7 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://${DB_URL}/${MYSQL_DATABASE}
-    username: ${MYSQL_USER}
+    username: ${MYSQL_ROOT_USER}
     password: ${MYSQL_ROOT_PASSWORD}
     hikari:
       auto-commit: false
