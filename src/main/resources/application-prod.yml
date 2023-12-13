@@ -1,20 +1,24 @@
 server:
   port: 8080
-  servlet:
-    contextPath: /api
 
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:mysql://${DB_URL}/${MYSQL_DATABASE}
+    username: ${MYSQL_USER}
+    password: ${MYSQL_ROOT_PASSWORD}
     hikari:
       auto-commit: false
       connection-test-query: SELECT 1
       minimum-idle: 10
       maximum-pool-size: 20
       pool-name: like-pool
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      timeout: 10000
 
   jpa:
     database-platform: org.hibernate.dialect.MySQL8Dialect
