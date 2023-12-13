@@ -15,18 +15,21 @@ public class LikeController {
 
     private final LikeService likeService;
 
-    /**
-     * 좋아요 추가
-     */
+    //userId와 locationId를 통해 좋아요 추가
     @PostMapping("/add")
     public ResponseEntity<Void> addLike(@RequestParam Long userId, @RequestParam Long locationId) {
         likeService.addLike(userId, locationId);
         return ResponseEntity.ok().build();
     }
 
-    /**
-     * 특정 유저가 좋아요한 가게id 가져오기
-     */
+    //레디스에 저장된 현재 특정 location의 좋아요 수
+    @GetMapping("/redis-count")
+    public ResponseEntity<Integer> getLikesCountFromRedis(@RequestParam Long locationId) {
+        Integer likesCount = likeService.getLikesCountFromRedis(locationId);
+        return likesCount != null ? ResponseEntity.ok(likesCount) : ResponseEntity.notFound().build();
+    }
+
+    //특정 유저가 좋아요한 location 목록 가져오기
     @GetMapping("/user")
     public ResponseEntity<Page<Long>> getUserLikeLocation(@RequestParam Long userId, @RequestParam int page, @RequestParam int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -34,9 +37,7 @@ public class LikeController {
         return ResponseEntity.ok(likeLocationId);
     }
 
-    /**
-     * 좋아요 삭제
-     */
+    //특정 유저가 location 좋아요 삭제
     @DeleteMapping("/remove")
     public ResponseEntity<Void> removeLike(@RequestParam Long userId, @RequestParam Long locationId) {
         likeService.removeLike(userId, locationId);

@@ -1,15 +1,12 @@
 package com.poppin.likeservice.entity;
 
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
-@Getter
-@Setter
-@NoArgsConstructor
+@Getter @Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "location_like")
 public class LocationLike {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,10 +17,10 @@ public class LocationLike {
     private Long locationId;
 
     @Column(nullable = false)
-    private Long likeCount;
+    private Integer likeCount;
 
     @Builder
-    public LocationLike(Long locationId, Long likeCount) {
+    public LocationLike(Long locationId, Integer likeCount) {
         this.locationId = locationId;
         this.likeCount = likeCount;
     }

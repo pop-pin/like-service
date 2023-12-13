@@ -1,14 +1,12 @@
 package com.poppin.likeservice.entity;
 
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Getter@Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "user_like")
 public class UserLike {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

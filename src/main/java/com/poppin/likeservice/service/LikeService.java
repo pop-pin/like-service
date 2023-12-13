@@ -25,30 +25,48 @@ public class LikeService {
     private final UserLikeRepository userLikeRepository;
     private final LocationLikeRepository locationLikeRepository;
 
-    @Transactional
+    @Transactional(readOnly = false)
     public void addLike(Long userId, Long locationId) {
         HashOperations<String, String, Object> hashOperations = redisTemplate.opsForHash();
         String key = "locationId::" + locationId;
         String hashkey = "likes";
 
-        Long likesCount = (Long) hashOperations.get(key, hashkey);
-        if (likesCount == null) {
+        Integer likesCount;
+        Object rawLikesCount = hashOperations.get(key, hashkey);
+        if (rawLikesCount instanceof Integer) {
+            likesCount = (Integer) rawLikesCount;
+        } else if (rawLikesCount instanceof Long) {
+            likesCount = ((Long) rawLikesCount).intValue();
+        } else {// likecount가 레디스에 없을 때
             Optional<LocationLike> locationLike = locationLikeRepository.findByLocationId(locationId);
             if (locationLike.isPresent()) {
                 likesCount = locationLike.get().getLikeCount();
             } else {
-                String url = "http://location-service/location/likes-count"+locationId;
-                likesCount = restTemplate.getForObject(url, Long.class);
+                likesCount = 0;
             }
-
             hashOperations.put(key, hashkey, likesCount);
         }
 
-        hashOperations.increment(key, hashkey, 1L);
+        hashOperations.increment(key, hashkey, 1);
 
         String eventKey = "likesEvents";
         String eventValue = "add:" + userId + ":" + locationId;
         redisTemplate.opsForList().leftPush(eventKey, eventValue);
+    }
+
+    public Integer getLikesCountFromRedis(Long locationId) {
+        HashOperations<String, String, Object> hashOperations = redisTemplate.opsForHash();
+        String key = "locationId::" + locationId;
+        String hashkey = "likes";
+
+        Object rawLikesCount = hashOperations.get(key, hashkey);
+        if (rawLikesCount instanceof Integer) {
+            return (Integer) rawLikesCount;
+        } else if (rawLikesCount instanceof Long) {
+            return ((Long) rawLikesCount).intValue();
+        } else {
+            return null;
+        }
     }
 
     public Page<Long> getUserLikeLocation(Long userId, Pageable pageable) {
@@ -56,22 +74,27 @@ public class LikeService {
         return userLikes.map(UserLike::getLocationId);
     }
 
-    @Transactional
+    @Transactional(readOnly = false)
     public void removeLike(Long userId, Long locationId) {
         HashOperations<String, String, Object> hashOperations = redisTemplate.opsForHash();
         String key = "locationId::" + locationId;
         String hashkey = "likes";
 
-        Long likesCount = (Long) hashOperations.get(key, hashkey);
-        if (likesCount == null) {
+        // Handle the retrieval and casting of likesCount
+        Integer likesCount;
+        Object rawLikesCount = hashOperations.get(key, hashkey);
+        if (rawLikesCount instanceof Integer) {
+            likesCount = (Integer) rawLikesCount;
+        } else if (rawLikesCount instanceof Long) {
+            likesCount = ((Long) rawLikesCount).intValue();
+        } else {
             Optional<LocationLike> locationLike = locationLikeRepository.findByLocationId(locationId);
-            likesCount = locationLike.get().getLikeCount();
+            likesCount = locationLike.isPresent() ? locationLike.get().getLikeCount() : 0;
             hashOperations.put(key, hashkey, likesCount);
         }
 
         if (likesCount > 0) {
-            hashOperations.increment(key, hashkey, -1L);
-
+            hashOperations.increment(key, hashkey, -1);
             String eventKey = "likesEvents";
             String eventValue = "remove:" + userId + ":" + locationId;
             redisTemplate.opsForList().leftPush(eventKey, eventValue);
@@ -79,7 +102,8 @@ public class LikeService {
     }
 
 
-    @Scheduled(fixedDelay = 10000)
+    @Scheduled(fixedDelay = 1000)//현재 빠른 확인을 위해 1초로 설정
+    @Transactional(readOnly = false)
     public void processLikeEvent() {
         String eventKey = "likesEvents";
         while (true) {
@@ -94,35 +118,18 @@ public class LikeService {
             Long locationId = Long.parseLong(parts[2]);
 
             if ("add".equals(action)) {
-                // 좋아요 추가에 대한 데이터베이스 업데이트 로직
                 UserLike userLike = UserLike.builder()
                         .userId(userId)
                         .locationId(locationId)
                         .build();
                 userLikeRepository.save(userLike);
-
-                locationLikeRepository.findByLocationId(locationId).ifPresentOrElse(
-                        locationLike -> {
-                            locationLike.setLikeCount(locationLike.getLikeCount() + 1);
-                            locationLikeRepository.save(locationLike);
-                        },
-                        () -> {
-                            LocationLike newLocationLike = LocationLike.builder()
-                                    .locationId(locationId)
-                                    .likeCount(1L)
-                                    .build();
-                            locationLikeRepository.save(newLocationLike);
-                        }
-                );
-
             } else if ("remove".equals(action)) {
-                // 좋아요 제거에 대한 데이터베이스 업데이트 로직
                 userLikeRepository.findByUserIdAndLocationId(userId, locationId)
                         .ifPresent(userLikeRepository::delete);
 
                 locationLikeRepository.findByLocationId(locationId).ifPresent(
                         locationLike -> {
-                            long newCount = Math.max(0, locationLike.getLikeCount() - 1);
+                            int newCount = Math.max(0, locationLike.getLikeCount() - 1);
                             locationLike.setLikeCount(newCount);
                             locationLikeRepository.save(locationLike);
                         }
@@ -130,6 +137,5 @@ public class LikeService {
             }
         }
     }
-
 
 }
